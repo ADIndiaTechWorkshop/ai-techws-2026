@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.env
+.env.local
+.worktrees/
+.superpowers/
+*.log
+dist/
+coverage/
