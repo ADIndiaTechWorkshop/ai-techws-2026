@@ -8,7 +8,7 @@ import {
   setCartLines,
   setDiscountCode,
   setWishlistIds,
-} from "@/lib/cart-cookie";
+} from "@/lib/cart-store";
 
 function mergeLine(
   lines: { productId: string; qty: number }[],
@@ -35,7 +35,7 @@ export async function addToCartAndRedirect(productId: string, qty = 1) {
 }
 
 export async function buyNow(productId: string) {
-  await setCartLines([{ productId, qty: 1 }]);
+  await addToCart(productId, 1);
   redirect("/checkout");
 }
 

@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { Shell } from "@/components/chrome/Shell";
-import { getCartLines, getDiscountCode } from "@/lib/cart-cookie";
+import { getCartLines, getDiscountCode } from "@/lib/cart-store";
 import { prisma } from "@/lib/db";
 import { formatInr, quoteCart } from "@/lib/money";
+import { getSession } from "@/lib/session";
 import { placeOrder } from "../actions/checkout";
 
 export default async function CheckoutPage() {
+  const session = await getSession();
   const lines = await getCartLines();
   const code = await getDiscountCode();
 
@@ -51,6 +53,8 @@ export default async function CheckoutPage() {
                 name="email"
                 type="email"
                 required
+                readOnly={!!session}
+                defaultValue={session?.email ?? ""}
                 className="mt-1 w-full rounded-md border border-line px-3 py-2"
               />
             </label>

@@ -1,29 +1,15 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Shell } from "@/components/chrome/Shell";
 import { prisma } from "@/lib/db";
 import { formatInr, quoteCart } from "@/lib/money";
 import {
-  addToCart,
   applyDiscountCode,
   getCartState,
   removeFromCart,
   saveForLater,
 } from "../actions/cart";
 
-type SearchParams = Promise<{ add?: string }>;
-
-export default async function CartPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
-  const sp = await searchParams;
-  if (sp.add) {
-    await addToCart(sp.add, 1);
-    redirect("/cart");
-  }
-
+export default async function CartPage() {
   const { lines, code } = await getCartState();
   const products = lines.length
     ? await prisma.product.findMany({

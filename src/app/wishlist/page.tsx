@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Shell } from "@/components/chrome/Shell";
-import { getWishlistIds } from "@/lib/cart-cookie";
+import { getWishlistIds } from "@/lib/cart-store";
 import { prisma } from "@/lib/db";
 import { formatInr } from "@/lib/money";
 import { moveWishToCart } from "../actions/cart";

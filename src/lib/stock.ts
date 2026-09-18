@@ -7,14 +7,24 @@ export function planStock(
   return lines.map((l) => ({ productId: l.productId, next: l.stockQty - l.qty }));
 }
 
+type StockLine = { productId: string; qty: number };
+
 export async function assertAndDecrement(
-  tx: { product: { update: Function } },
-  planned: { productId: string; next: number }[],
+  tx: { product: { updateMany: Function } },
+  lines: StockLine[],
 ) {
-  for (const p of planned) {
-    await tx.product.update({
-      where: { id: p.productId },
-      data: { stockQty: p.next },
+  for (const line of lines) {
+    const result = await tx.product.updateMany({
+      where: {
+        id: line.productId,
+        stockQty: { gte: line.qty },
+      },
+      data: {
+        stockQty: { decrement: line.qty },
+      },
     });
+    if (result.count !== 1) {
+      throw new Error("Insufficient stock");
+    }
   }
 }

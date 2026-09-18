@@ -1,37 +1,54 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { redirect } from "next/navigation";
 import {
-  clearCheckoutCookies,
+  clearCartAfterOrder,
+  clearCartInTransaction,
   getCartLines,
   getDiscountCode,
-} from "@/lib/cart-cookie";
+} from "@/lib/cart-store";
 import { prisma } from "@/lib/db";
 import { quoteCart } from "@/lib/money";
 import { mockPay } from "@/lib/mock-pay";
 import { redis } from "@/lib/redis";
-import { assertAndDecrement, planStock } from "@/lib/stock";
+import { getSession } from "@/lib/session";
+import { assertAndDecrement } from "@/lib/stock";
 
-async function nextOrderId(): Promise<string> {
-  const count = await prisma.order.count();
-  const n = count + 1;
-  return `ORD-${String(n).padStart(4, "0")}`;
+function isUniqueOrderIdError(err: unknown): boolean {
+  return (
+    err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002"
+  );
+}
+
+async function allocateOrderId(
+  tx: { order: { count: Function; findUnique: Function } },
+): Promise<string> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const count = await tx.order.count();
+    const orderId = `ORD-${String(count + 1).padStart(4, "0")}`;
+    const existing = await tx.order.findUnique({ where: { id: orderId } });
+    if (!existing) return orderId;
+  }
+  throw new Error("Could not allocate order id");
 }
 
 export async function placeOrder(formData: FormData) {
+  const session = await getSession();
   const lines = await getCartLines();
   if (lines.length === 0) {
     throw new Error("Cart is empty");
   }
 
-  const guestEmail = String(formData.get("email") ?? "").trim();
+  const formEmail = String(formData.get("email") ?? "").trim();
+  const email = session?.email ?? formEmail;
   const name = String(formData.get("name") ?? "").trim();
   const line1 = String(formData.get("line1") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
   const postal = String(formData.get("postal") ?? "").trim();
   const paymentMethod = String(formData.get("paymentMethod") ?? "razorpay");
 
-  if (!guestEmail || !name || !line1 || !city || !postal) {
+  if (!email || !name || !line1 || !city || !postal) {
     throw new Error("Please complete all fields");
   }
 
@@ -59,69 +76,86 @@ export async function placeOrder(formData: FormData) {
     method: paymentMethod,
   });
 
-  const orderId = await nextOrderId();
+  const userId = session?.userId ?? null;
+  let orderId = "";
 
-  await prisma.$transaction(async (tx) => {
-    const fresh = await tx.product.findMany({
-      where: { id: { in: lines.map((l) => l.productId) } },
-    });
-    const freshById = new Map(fresh.map((p) => [p.id, p]));
-    const stockInput = lines.map((line) => {
-      const p = freshById.get(line.productId);
-      if (!p) throw new Error("Product not found");
-      return {
-        productId: line.productId,
-        qty: line.qty,
-        stockQty: p.stockQty,
-      };
-    });
-    const planned = planStock(stockInput);
-    await assertAndDecrement(tx, planned);
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      orderId = await prisma.$transaction(async (tx) => {
+        const id = await allocateOrderId(tx);
 
-    await tx.order.create({
-      data: {
-        id: orderId,
-        guestEmail,
-        status: "CONFIRMED",
-        subtotalPaise,
-        discountPaise: quote.discountPaise,
-        shippingPaise: quote.shippingPaise,
-        totalPaise: quote.totalPaise,
-        discountCode: discountCode ?? undefined,
-        paymentMethod,
-        items: {
-          create: orderLines.map(({ line, product }) => ({
-            productId: product.id,
-            nameSnapshot: product.name,
-            unitPaise: product.pricePaise,
-            qty: line.qty,
-          })),
-        },
-      },
-    });
+        await assertAndDecrement(
+          tx,
+          lines.map((l) => ({ productId: l.productId, qty: l.qty })),
+        );
 
-    await tx.address.create({
-      data: {
-        guestEmail,
-        name,
-        line1,
-        city,
-        postal,
-      },
-    });
-  });
+        await tx.order.create({
+          data: {
+            id,
+            userId: userId ?? undefined,
+            guestEmail: userId ? undefined : email,
+            status: "CONFIRMED",
+            subtotalPaise,
+            discountPaise: quote.discountPaise,
+            shippingPaise: quote.shippingPaise,
+            totalPaise: quote.totalPaise,
+            discountCode: discountCode ?? undefined,
+            paymentMethod,
+            items: {
+              create: orderLines.map(({ line, product }) => ({
+                productId: product.id,
+                nameSnapshot: product.name,
+                unitPaise: product.pricePaise,
+                qty: line.qty,
+              })),
+            },
+          },
+        });
 
-  await redis.xadd(
-    "orders.placed",
-    "*",
-    "orderId",
-    orderId,
-    "email",
-    guestEmail,
-    "totalPaise",
-    String(quote.totalPaise),
-  );
+        await tx.address.create({
+          data: {
+            userId: userId ?? undefined,
+            guestEmail: userId ? undefined : email,
+            name,
+            line1,
+            city,
+            postal,
+          },
+        });
 
-  await clearCheckoutCookies();
+        if (userId) {
+          await clearCartInTransaction(tx, userId);
+        }
+
+        return id;
+      });
+      break;
+    } catch (err) {
+      if (isUniqueOrderIdError(err) && attempt < 4) continue;
+      throw err;
+    }
+  }
+
+  if (!orderId) {
+    throw new Error("Could not place order");
+  }
+
+  await clearCartAfterOrder(userId);
+
+  try {
+    await redis.xadd(
+      "orders.placed",
+      "*",
+      "orderId",
+      orderId,
+      "email",
+      email,
+      "totalPaise",
+      String(quote.totalPaise),
+    );
+  } catch (err) {
+    console.error("orders.placed XADD failed", err);
+  }
+
   redirect(`/orders/${orderId}`);
 }
