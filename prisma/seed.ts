@@ -137,7 +137,6 @@ async function main() {
         description,
         mrpPaise,
         pricePaise,
-        stockQty,
         imageUrl: item.imageUrl ?? "",
         categoryId,
         status: "ACTIVE",
@@ -167,7 +166,6 @@ async function main() {
         name: "Wireless earbuds — cart mock",
         pricePaise: 1_299_000,
         mrpPaise: 1_499_000,
-        stockQty: 25,
         categoryId: accessoriesId,
       },
       create: {
