@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { Shell } from "@/components/chrome/Shell";
 import { ProductPurchaseForms } from "@/components/catalog/ProductPurchaseForms";
-import { formatInrPaise, getProduct } from "@/lib/catalog";
+import { getProduct } from "@/lib/catalog";
+import { formatInr } from "@/lib/money";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -41,11 +42,11 @@ export default async function ProductPage({ params }: PageProps) {
 
             <div className="mt-6 flex flex-wrap items-baseline gap-3">
               <span className="text-2xl font-semibold text-gold">
-                {formatInrPaise(product.pricePaise)}
+                {formatInr(product.pricePaise)}
               </span>
               {product.mrpPaise > product.pricePaise ? (
                 <span className="text-lg text-muted line-through">
-                  {formatInrPaise(product.mrpPaise)}
+                  {formatInr(product.mrpPaise)}
                 </span>
               ) : null}
             </div>

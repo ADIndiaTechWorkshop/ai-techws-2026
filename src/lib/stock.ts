@@ -1,3 +1,7 @@
+export function isInsufficientStockError(err: unknown): boolean {
+  return err instanceof Error && /insufficient stock/i.test(err.message);
+}
+
 export function planStock(
   lines: { productId: string; qty: number; stockQty: number }[],
 ) {

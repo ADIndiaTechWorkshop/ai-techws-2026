@@ -18,7 +18,7 @@ export default async function AdminProductsPage() {
 
       <div className="overflow-hidden rounded-xl bg-surface">
         <table className="min-w-full text-left text-[13px]">
-          <thead className="bg-[#e8ede6] text-xs font-semibold text-ink">
+          <thead className="bg-line text-xs font-semibold text-ink">
             <tr>
               <th className="px-4 py-3 font-semibold">Name</th>
               <th className="px-4 py-3 font-semibold">Price</th>

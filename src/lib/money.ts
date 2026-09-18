@@ -20,6 +20,5 @@ export function quoteCart(subtotalPaise: number, code: string | null) {
 }
 
 export function formatInr(paise: number) {
-  const rupees = Math.round(paise / 100);
-  return `₹ ${rupees.toLocaleString("en-IN")}`;
+  return `₹ ${Math.floor(paise / 100).toLocaleString("en-IN")}`;
 }

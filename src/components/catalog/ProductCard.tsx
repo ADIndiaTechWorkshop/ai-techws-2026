@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Heart } from "lucide-react";
-import { CatalogProduct, formatInrPaise } from "@/lib/catalog";
+import { CatalogProduct } from "@/lib/catalog";
+import { formatInr } from "@/lib/money";
 
 type ProductCardProps = {
   product: CatalogProduct;
@@ -44,7 +45,7 @@ export function ProductCard({ product, variant = "compact" }: ProductCardProps) 
           {product.name}
         </p>
         <p className="mt-2 text-sm font-semibold text-gold">
-          {formatInrPaise(product.pricePaise)}
+          {formatInr(product.pricePaise)}
         </p>
       </div>
     </Link>

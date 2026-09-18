@@ -13,7 +13,7 @@ import { quoteCart } from "@/lib/money";
 import { mockPay } from "@/lib/mock-pay";
 import { redis } from "@/lib/redis";
 import { getSession } from "@/lib/session";
-import { assertAndDecrement } from "@/lib/stock";
+import { assertAndDecrement, isInsufficientStockError } from "@/lib/stock";
 
 function isUniqueOrderIdError(err: unknown): boolean {
   return (
@@ -42,11 +42,35 @@ export async function placeOrder(formData: FormData) {
 
   const formEmail = String(formData.get("email") ?? "").trim();
   const email = session?.email ?? formEmail;
-  const name = String(formData.get("name") ?? "").trim();
-  const line1 = String(formData.get("line1") ?? "").trim();
-  const city = String(formData.get("city") ?? "").trim();
-  const postal = String(formData.get("postal") ?? "").trim();
   const paymentMethod = String(formData.get("paymentMethod") ?? "razorpay");
+
+  let name: string;
+  let line1: string;
+  let city: string;
+  let postal: string;
+  let persistAddress = true;
+
+  if (session?.userId) {
+    const addressId = String(formData.get("addressId") ?? "").trim();
+    const saved = addressId
+      ? await prisma.address.findFirst({
+          where: { id: addressId, userId: session.userId },
+        })
+      : null;
+    if (!saved) {
+      throw new Error("Please select a delivery address");
+    }
+    name = saved.name;
+    line1 = saved.line1;
+    city = saved.city;
+    postal = saved.postal;
+    persistAddress = false;
+  } else {
+    name = String(formData.get("name") ?? "").trim();
+    line1 = String(formData.get("line1") ?? "").trim();
+    city = String(formData.get("city") ?? "").trim();
+    postal = String(formData.get("postal") ?? "").trim();
+  }
 
   if (!email || !name || !line1 || !city || !postal) {
     throw new Error("Please complete all fields");
@@ -112,16 +136,18 @@ export async function placeOrder(formData: FormData) {
           },
         });
 
-        await tx.address.create({
-          data: {
-            userId: userId ?? undefined,
-            guestEmail: userId ? undefined : email,
-            name,
-            line1,
-            city,
-            postal,
-          },
-        });
+        if (persistAddress) {
+          await tx.address.create({
+            data: {
+              userId: userId ?? undefined,
+              guestEmail: userId ? undefined : email,
+              name,
+              line1,
+              city,
+              postal,
+            },
+          });
+        }
 
         if (userId) {
           await clearCartInTransaction(tx, userId);
@@ -131,6 +157,9 @@ export async function placeOrder(formData: FormData) {
       });
       break;
     } catch (err) {
+      if (isInsufficientStockError(err)) {
+        redirect("/checkout?error=stock");
+      }
       if (isUniqueOrderIdError(err) && attempt < 4) continue;
       throw err;
     }

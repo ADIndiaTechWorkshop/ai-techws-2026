@@ -41,7 +41,9 @@ export default async function AccountAddressesPage({
         </div>
 
         {error === "invalid" ? (
-          <p className="mt-4 text-sm text-red-700">Please fill in all address fields.</p>
+          <p className="mt-4 rounded-md border border-line bg-canvas px-3 py-2 text-sm text-navy">
+            Please fill in all address fields.
+          </p>
         ) : null}
 
         <ul className="mt-8 flex flex-col gap-4">

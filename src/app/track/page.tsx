@@ -18,7 +18,9 @@ export default async function TrackPage({
         </p>
 
         {error === "missing" ? (
-          <p className="mt-4 text-sm text-red-700">Please enter an order ID.</p>
+          <p className="mt-4 rounded-md border border-line bg-canvas px-3 py-2 text-sm text-navy">
+            Please enter an order ID.
+          </p>
         ) : null}
 
         <form action={lookupOrder} className="mt-8 flex max-w-lg flex-col gap-4 sm:flex-row sm:items-end">

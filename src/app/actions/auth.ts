@@ -166,7 +166,7 @@ export async function addAddress(formData: FormData): Promise<void> {
     redirect("/account/addresses?error=invalid");
   }
 
-  await prisma.address.create({
+  const created = await prisma.address.create({
     data: {
       userId: session.userId,
       name,
@@ -175,6 +175,11 @@ export async function addAddress(formData: FormData): Promise<void> {
       postal,
     },
   });
+
+  const returnTo = String(formData.get("returnTo") ?? "").trim();
+  if (returnTo === "/checkout") {
+    redirect(`/checkout?addressId=${created.id}`);
+  }
 
   redirect("/account/addresses");
 }

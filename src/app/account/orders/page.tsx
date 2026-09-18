@@ -3,15 +3,8 @@ import { redirect } from "next/navigation";
 import type { OrderStatus } from "@prisma/client";
 import { Shell } from "@/components/chrome/Shell";
 import { prisma } from "@/lib/db";
+import { formatInr } from "@/lib/money";
 import { getSession } from "@/lib/session";
-
-function formatInr(paise: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(paise / 100);
-}
 
 function formatStatus(status: OrderStatus): string {
   switch (status) {

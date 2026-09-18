@@ -27,11 +27,6 @@ const productSelect = {
   imageUrl: true,
 } as const;
 
-export function formatInrPaise(paise: number): string {
-  const rupees = Math.round(paise / 100);
-  return `₹ ${rupees.toLocaleString("en-IN")}`;
-}
-
 export function priceWhere(f: PriceFilter) {
   if (f === "u500") return { pricePaise: { lt: 50000 } };
   if (f === "500-2000") return { pricePaise: { gte: 50000, lte: 200000 } };

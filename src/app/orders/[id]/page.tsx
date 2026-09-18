@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { OrderStatus } from "@prisma/client";
 import { Shell } from "@/components/chrome/Shell";
 import { prisma } from "@/lib/db";
+import { formatInr } from "@/lib/money";
 
 const STEPS: { status: OrderStatus; label: string }[] = [
   { status: "CONFIRMED", label: "Confirmed" },
@@ -17,14 +18,6 @@ const STATUS_RANK: Record<OrderStatus, number> = {
   SHIPPED: 2,
   DELIVERED: 3,
 };
-
-function formatInr(paise: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(paise / 100);
-}
 
 function OrderStatusPipeline({ status }: { status: OrderStatus }) {
   const current = STATUS_RANK[status];
