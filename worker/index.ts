@@ -18,36 +18,45 @@ async function ensureGroup() {
   }
 }
 
+async function processBatch(res: unknown) {
+  if (!res) return;
+  for (const [, entries] of res as [string, [string, string[]][]][]) {
+    for (const [id, fields] of entries) {
+      const map: Record<string, string> = {};
+      for (let i = 0; i < fields.length; i += 2) map[fields[i]] = fields[i + 1];
+      const order = await prisma.order.findUnique({
+        where: { id: map.orderId },
+        include: { items: true },
+      });
+      if (!order || !map.email) continue;
+      const lines = order.items
+        .map((i) => `${i.nameSnapshot} × ${i.qty}`)
+        .join("\n");
+      await transport.sendMail({
+        from: "receipts@appstore.local",
+        to: map.email,
+        subject: `AppStore receipt ${order.id}`,
+        text: `${lines}\nTotal paise: ${order.totalPaise}`,
+      });
+      await redis.xack("orders.placed", "notifications", id);
+    }
+  }
+}
+
 async function loop() {
   await ensureGroup();
   while (true) {
+    const pending = await redis.xreadgroup(
+      "GROUP", "notifications", "mailer",
+      "COUNT", 1, "STREAMS", "orders.placed", "0",
+    );
+    await processBatch(pending);
+
     const res = await redis.xreadgroup(
       "GROUP", "notifications", "mailer",
       "COUNT", 1, "BLOCK", 5000, "STREAMS", "orders.placed", ">",
     );
-    if (!res) continue;
-    for (const [, entries] of res as any) {
-      for (const [id, fields] of entries) {
-        const map: Record<string, string> = {};
-        for (let i = 0; i < fields.length; i += 2) map[fields[i]] = fields[i + 1];
-        const order = await prisma.order.findUnique({
-          where: { id: map.orderId },
-          include: { items: true },
-        });
-        if (order && map.email) {
-          const lines = order.items
-            .map((i) => `${i.nameSnapshot} × ${i.qty}`)
-            .join("\n");
-          await transport.sendMail({
-            from: "receipts@appstore.local",
-            to: map.email,
-            subject: `AppStore receipt ${order.id}`,
-            text: `${lines}\nTotal paise: ${order.totalPaise}`,
-          });
-        }
-        await redis.xack("orders.placed", "notifications", id);
-      }
-    }
+    await processBatch(res);
   }
 }
 
