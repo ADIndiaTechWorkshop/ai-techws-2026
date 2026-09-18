@@ -1,0 +1,47 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: appstore
+      MYSQL_USER: appstore
+      MYSQL_PASSWORD: appstore
+      MYSQL_ROOT_PASSWORD: root
+    ports: ["3306:3306"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+  mailpit:
+    image: axllent/mailpit
+    ports: ["8025:8025", "1025:1025"]
+  app:
+    build: .
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed && npm run dev"
+    ports: ["3000:3000"]
+    environment:
+      DATABASE_URL: mysql://appstore:appstore@mysql:3306/appstore
+      REDIS_URL: redis://redis:6379
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SESSION_SECRET: dev-session-secret-change-me
+    volumes: [".:/app", "/app/node_modules"]
+    depends_on:
+      mysql: { condition: service_healthy }
+      redis: { condition: service_started }
+      mailpit: { condition: service_started }
+  worker:
+    build: .
+    command: npx tsx worker/index.ts
+    environment:
+      DATABASE_URL: mysql://appstore:appstore@mysql:3306/appstore
+      REDIS_URL: redis://redis:6379
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+    depends_on:
+      mysql: { condition: service_healthy }
+      redis: { condition: service_started }
+      mailpit: { condition: service_started }

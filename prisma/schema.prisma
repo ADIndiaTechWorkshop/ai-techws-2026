@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  BUYER
+  ADMIN
+}
+
+enum ProductStatus {
+  ACTIVE
+  HIDDEN
+}
+
+enum OrderStatus {
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String
+  role         Role           @default(BUYER)
+  sessions     Session[]
+  carts        Cart[]
+  wishlist     WishlistItem[]
+  addresses    Address[]
+  orders       Order[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  parentId    String?
+  parent      Category?  @relation("CatTree", fields: [parentId], references: [id])
+  children    Category[] @relation("CatTree")
+  sortOrder   Int        @default(0)
+  products    Product[]  @relation("ProductCategory")
+  subProducts Product[]  @relation("ProductSubcategory")
+}
+
+model Product {
+  id            String         @id @default(cuid())
+  name          String
+  slug          String         @unique
+  description   String         @db.Text
+  mrpPaise      Int
+  pricePaise    Int
+  stockQty      Int
+  imageUrl      String         @default("")
+  categoryId    String
+  subcategoryId String?
+  status        ProductStatus  @default(ACTIVE)
+  category      Category       @relation("ProductCategory", fields: [categoryId], references: [id])
+  subcategory   Category?      @relation("ProductSubcategory", fields: [subcategoryId], references: [id])
+  cartItems     CartItem[]
+  wishItems     WishlistItem[]
+  orderItems    OrderItem[]
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id])
+  items     CartItem[]
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  cartId    String
+  productId String
+  qty       Int
+  cart      Cart    @relation(fields: [cartId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@id([cartId, productId])
+}
+
+model WishlistItem {
+  userId    String
+  productId String
+  user      User    @relation(fields: [userId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@id([userId, productId])
+}
+
+model Address {
+  id         String  @id @default(cuid())
+  userId     String?
+  user       User?   @relation(fields: [userId], references: [id])
+  guestEmail String?
+  name       String
+  line1      String
+  city       String
+  postal     String
+}
+
+model Order {
+  id            String      @id
+  userId        String?
+  user          User?       @relation(fields: [userId], references: [id])
+  guestEmail    String?
+  status        OrderStatus @default(CONFIRMED)
+  subtotalPaise Int
+  discountPaise Int
+  shippingPaise Int
+  totalPaise    Int
+  discountCode  String?
+  paymentMethod String
+  items         OrderItem[]
+  createdAt     DateTime    @default(now())
+}
+
+model OrderItem {
+  id           String  @id @default(cuid())
+  orderId      String
+  order        Order   @relation(fields: [orderId], references: [id])
+  productId    String
+  product      Product @relation(fields: [productId], references: [id])
+  nameSnapshot String
+  unitPaise    Int
+  qty          Int
+}
