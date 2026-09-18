@@ -71,6 +71,12 @@ export async function saveProduct(
     if (!sub || sub.parentId == null) {
       return { ok: false, error: "Subcategory must belong to a parent." };
     }
+    if (sub.parentId !== categoryId) {
+      return {
+        ok: false,
+        error: "Subcategory must belong to the selected category.",
+      };
+    }
   }
 
   if (id) {

@@ -10,6 +10,9 @@ type ProductFormProps = {
   error?: string;
 };
 
+const fieldClass =
+  "w-full rounded-lg border-0 bg-canvas px-3 py-2.5 text-sm text-ink";
+
 export function ProductForm({
   action,
   categories,
@@ -21,33 +24,30 @@ export function ProductForm({
   const mrpRupees = product ? (product.mrpPaise / 100).toString() : "";
 
   return (
-    <form
-      action={action}
-      className="max-w-xl space-y-4 rounded-lg border border-line bg-surface p-6"
-    >
+    <form action={action} className="max-w-[640px] space-y-3">
       {error ? (
-        <p className="rounded-md bg-canvas px-3 py-2 text-sm text-ink" role="alert">
+        <p className="text-sm text-ink" role="alert">
           {error}
         </p>
       ) : null}
 
-      <label className="block space-y-1 text-sm">
-        <span className="font-medium text-ink">Name</span>
+      <label className="block space-y-1.5 text-xs font-medium text-muted">
+        Name
         <input
           name="name"
           required
           defaultValue={product?.name ?? ""}
-          className="w-full rounded-md border border-line px-3 py-2"
+          className={fieldClass}
         />
       </label>
 
-      <label className="block space-y-1 text-sm">
-        <span className="font-medium text-ink">Category</span>
+      <label className="block space-y-1.5 text-xs font-medium text-muted">
+        Category
         <select
           name="categoryId"
           required
           defaultValue={product?.categoryId ?? ""}
-          className="w-full rounded-md border border-line px-3 py-2"
+          className={fieldClass}
         >
           <option value="" disabled>
             Select category
@@ -60,12 +60,12 @@ export function ProductForm({
         </select>
       </label>
 
-      <label className="block space-y-1 text-sm">
-        <span className="font-medium text-ink">Subcategory</span>
+      <label className="block space-y-1.5 text-xs font-medium text-muted">
+        Subcategory
         <select
           name="subcategoryId"
           defaultValue={product?.subcategoryId ?? ""}
-          className="w-full rounded-md border border-line px-3 py-2"
+          className={fieldClass}
         >
           <option value="">None</option>
           {subcategories.map((c) => (
@@ -76,69 +76,69 @@ export function ProductForm({
         </select>
       </label>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block space-y-1 text-sm">
-          <span className="font-medium text-ink">Price (₹)</span>
-          <input
-            name="priceRupees"
-            type="number"
-            min="0"
-            step="0.01"
-            required
-            defaultValue={priceRupees}
-            className="w-full rounded-md border border-line px-3 py-2"
-          />
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="font-medium text-ink">MRP (₹)</span>
+      <label className="block space-y-1.5 text-xs font-medium text-muted">
+        Price
+        <input
+          name="priceRupees"
+          type="number"
+          min="0"
+          step="0.01"
+          required
+          defaultValue={priceRupees}
+          className={fieldClass}
+        />
+      </label>
+
+      <label className="block space-y-1.5 text-xs font-medium text-muted">
+        Image URL
+        <input
+          name="imageUrl"
+          type="text"
+          defaultValue={product?.imageUrl ?? ""}
+          className={fieldClass}
+        />
+      </label>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block space-y-1.5 text-xs font-medium text-muted">
+          MRP
           <input
             name="mrpRupees"
             type="number"
             min="0"
             step="0.01"
             defaultValue={mrpRupees}
-            className="w-full rounded-md border border-line px-3 py-2"
+            className={fieldClass}
+          />
+        </label>
+        <label className="block space-y-1.5 text-xs font-medium text-muted">
+          Stock qty
+          <input
+            name="stockQty"
+            type="number"
+            min="0"
+            defaultValue={product?.stockQty ?? 10}
+            className={fieldClass}
           />
         </label>
       </div>
 
-      <label className="block space-y-1 text-sm">
-        <span className="font-medium text-ink">Stock qty</span>
-        <input
-          name="stockQty"
-          type="number"
-          min="0"
-          defaultValue={product?.stockQty ?? 10}
-          className="w-full rounded-md border border-line px-3 py-2"
-        />
-      </label>
-
-      <label className="block space-y-1 text-sm">
-        <span className="font-medium text-ink">Image URL</span>
-        <input
-          name="imageUrl"
-          type="text"
-          defaultValue={product?.imageUrl ?? ""}
-          className="w-full rounded-md border border-line px-3 py-2"
-        />
-      </label>
-
-      <label className="block space-y-1 text-sm">
-        <span className="font-medium text-ink">Description</span>
+      <label className="block space-y-1.5 text-xs font-medium text-muted">
+        Description
         <textarea
           name="description"
           rows={3}
           defaultValue={product?.description ?? ""}
-          className="w-full rounded-md border border-line px-3 py-2"
+          className={fieldClass}
         />
       </label>
 
-      <label className="block space-y-1 text-sm">
-        <span className="font-medium text-ink">Status</span>
+      <label className="block space-y-1.5 text-xs font-medium text-muted">
+        Status
         <select
           name="status"
           defaultValue={product?.status ?? "ACTIVE"}
-          className="w-full rounded-md border border-line px-3 py-2"
+          className={fieldClass}
         >
           <option value="ACTIVE">ACTIVE</option>
           <option value="HIDDEN">HIDDEN</option>
@@ -147,9 +147,9 @@ export function ProductForm({
 
       <button
         type="submit"
-        className="rounded-md bg-navy px-5 py-2.5 text-sm font-medium text-white hover:bg-navy/90"
+        className="rounded-lg bg-navy px-5 py-3 text-sm font-medium text-white hover:bg-navy/90"
       >
-        Save product
+        Save
       </button>
     </form>
   );

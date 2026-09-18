@@ -1,7 +1,13 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { saveSubcategory } from "@/app/actions/admin";
 
-export default async function AdminSubcategoriesPage() {
+type Props = { searchParams: Promise<{ error?: string }> };
+
+export default async function AdminSubcategoriesPage({
+  searchParams,
+}: Props) {
+  const { error } = await searchParams;
   const parents = await prisma.category.findMany({
     where: { parentId: null },
     orderBy: { sortOrder: "asc" },
@@ -14,12 +20,24 @@ export default async function AdminSubcategoriesPage() {
 
   async function addSubcategory(formData: FormData) {
     "use server";
-    await saveSubcategory(undefined, formData);
+    const result = await saveSubcategory(undefined, formData);
+    if (!result.ok) {
+      redirect(
+        `/admin/categories/sub?error=${encodeURIComponent(result.error)}`,
+      );
+    }
+    redirect("/admin/categories/sub");
   }
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold text-ink">Subcategories</h2>
+
+      {error ? (
+        <p className="text-sm text-ink" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       <div className="overflow-x-auto rounded-lg border border-line bg-surface">
         <table className="min-w-full text-left text-sm">

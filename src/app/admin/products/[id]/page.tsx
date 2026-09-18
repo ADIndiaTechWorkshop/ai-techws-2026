@@ -46,7 +46,7 @@ export default async function EditProductPage({ params, searchParams }: Props) {
           ← Products
         </Link>
       </div>
-      <h2 className="text-xl font-semibold text-ink">Edit product</h2>
+      <h2 className="text-2xl font-bold text-ink">Edit product</h2>
       <ProductForm
         action={updateProduct}
         categories={categories}
