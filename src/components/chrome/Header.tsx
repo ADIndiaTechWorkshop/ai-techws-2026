@@ -8,8 +8,11 @@ import {
   ShoppingCart,
   User,
 } from "lucide-react";
+import { getSession } from "@/lib/session";
 
-export function Header() {
+export async function Header() {
+  const session = await getSession();
+
   return (
     <header className="border-b border-line bg-surface">
       <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-12 py-4">
@@ -57,10 +60,22 @@ export function Header() {
             <ShoppingCart className="h-5 w-5 text-navy" aria-hidden />
             Cart
           </Link>
-          <Link href="/signin" className="flex items-center gap-1.5 hover:text-navy">
-            <User className="h-5 w-5 text-navy" aria-hidden />
-            Sign in
-          </Link>
+          {session?.role === "ADMIN" ? (
+            <Link href="/admin" className="flex items-center gap-1.5 hover:text-navy">
+              Admin
+            </Link>
+          ) : null}
+          {session ? (
+            <Link href="/account/orders" className="flex items-center gap-1.5 hover:text-navy">
+              <User className="h-5 w-5 text-navy" aria-hidden />
+              Account
+            </Link>
+          ) : (
+            <Link href="/signin" className="flex items-center gap-1.5 hover:text-navy">
+              <User className="h-5 w-5 text-navy" aria-hidden />
+              Sign in
+            </Link>
+          )}
         </nav>
       </div>
     </header>
