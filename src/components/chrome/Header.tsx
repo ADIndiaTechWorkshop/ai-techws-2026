@@ -8,6 +8,7 @@ import {
   ShoppingCart,
   User,
 } from "lucide-react";
+import { logout } from "@/app/actions/auth";
 import { getSession } from "@/lib/session";
 
 export async function Header() {
@@ -66,10 +67,23 @@ export async function Header() {
             </Link>
           ) : null}
           {session ? (
-            <Link href="/account/orders" className="flex items-center gap-1.5 hover:text-navy">
-              <User className="h-5 w-5 text-navy" aria-hidden />
-              Account
-            </Link>
+            <>
+              <Link
+                href="/account/orders"
+                className="flex items-center gap-1.5 hover:text-navy"
+              >
+                <User className="h-5 w-5 text-navy" aria-hidden />
+                Account
+              </Link>
+              <form action={logout}>
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 hover:text-navy"
+                >
+                  Sign out
+                </button>
+              </form>
+            </>
           ) : (
             <Link href="/signin" className="flex items-center gap-1.5 hover:text-navy">
               <User className="h-5 w-5 text-navy" aria-hidden />
