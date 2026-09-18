@@ -49,7 +49,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
           <input
             type="search"
             name="q"
-            value={query}
+            defaultValue={query}
             placeholder="Search products"
             className="min-w-0 flex-1 rounded-md border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-navy/20"
           />
